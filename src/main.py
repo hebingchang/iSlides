@@ -6,7 +6,11 @@ import sendkeys
 class SampleListener(Leap.Listener):
     finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
     bone_names = ['Metacarpal', 'Proximal', 'Intermediate', 'Distal']
-    flag = {"direction": -1, "count": 0, "volume": 0}
+    flag = {"direction": -1, "count": 0, "volume": 0, "swipe_starttime": 0, "swipe_lastendtime": 0, "last_direction": -1}
+    min_during_time = 1331100
+    volume_lastendtime_flag = volume_starttime_flag = 0
+    volume_last_diretion = -1
+
     swipe_min_frames = 2
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
@@ -54,34 +58,48 @@ class SampleListener(Leap.Listener):
                 if swipe_direction.x > 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
                     self.flag["direction"] = 0
                     self.flag["count"] += 1
+                    if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
                 elif swipe_direction.x < 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
                     self.flag["direction"] = 1
                     self.flag["count"] += 1
+                    if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
                 elif swipe_direction.y > 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
                     self.flag["direction"] = 2 # up
                     self.flag["volume"] += 1
-                    if self.flag["volume"] > self.swipe_volume_min_frames:
+                    if self.volume_starttime_flag == 0: self.volume_starttime_flag = frame.timestamp
+                    print self.volume_last_diretion
+                    if self.flag["volume"] > self.swipe_volume_min_frames and (self.volume_starttime_flag - self.volume_lastendtime_flag > self.min_during_time or self.volume_last_diretion == 1):
                         sendkeys.arrow_input("volume_up")
                         self.flag["volume"] = 0
+                        self.volume_last_diretion = 1
                 elif swipe_direction.y < 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
                     self.flag["direction"] = 3 # down
                     self.flag["volume"] += 1
-                    if self.flag["volume"] > self.swipe_volume_min_frames:
+                    if self.volume_starttime_flag == 0: self.volume_starttime_flag = frame.timestamp
+                    print self.volume_last_diretion
+                    if self.flag["volume"] > self.swipe_volume_min_frames and (self.volume_starttime_flag - self.volume_lastendtime_flag > self.min_during_time or self.volume_last_diretion == 0):
                         sendkeys.arrow_input("volume_Down")
                         self.flag["volume"] = 0
-            if gesture.type is Leap.Gesture.TYPE_KEY_TAP:
-                key_tap = Leap.KeyTapGesture(gesture)
-                print key_tap
-                self.flag["direction"] = 1
-                self.flag["count"] += 1
+                        self.volume_last_diretion = 0
 
         if len(gestures) == 0:
-            if self.flag["direction"] == 1:
+            if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 1):
                 sendkeys.arrow_input("right_arrow")
-            elif self.flag["direction"] == 0:
+                self.flag["swipe_lastendtime"] = frame.timestamp
+                self.flag["last_direction"] = 1
+            elif self.flag["direction"] == 0 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 0):
                 sendkeys.arrow_input("left_arrow")
+                self.flag["swipe_lastendtime"] = frame.timestamp
+                self.flag["last_direction"] = 0
+
             self.flag["count"] = 0
             self.flag["direction"] = -1
+            self.flag["swipe_starttime"] = 0
+            if self.volume_starttime_flag != 0:
+                self.volume_lastendtime_flag = frame.timestamp
+                self.volume_starttime_flag = 0
+
+
 
 
             # Get hands
