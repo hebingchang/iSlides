@@ -6,14 +6,21 @@ import sendkeys
 class SampleListener(Leap.Listener):
     finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
     bone_names = ['Metacarpal', 'Proximal', 'Intermediate', 'Distal']
-    flag = {"direction": 0, "count": 0}
+    flag = {"direction": -1, "count": 0, "volume": 0}
     swipe_min_frames = 2
-    swipe_volume_min_frames = 2
+    swipe_volume_min_frames = 4
+    swipe_min_delta_y = 0.3
 
     def on_init(self, controller):
         controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
-        controller.config.set("Gesture.Swipe.MinLength", 75.0)
-        controller.config.set("Gesture.Swipe.MinVelocity", 100.0)
+        controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
+        controller.config.set("Gesture.Swipe.MinLength", 100.0)
+        controller.config.set("Gesture.Swipe.MinVelocity", 160.0)
+
+        controller.config.set("Gesture.KeyTap.MinDownVelocity", 1.0)
+        controller.config.set("Gesture.KeyTap.HistorySeconds", 1.0)
+        controller.config.set("Gesture.KeyTap.MinDistance", 0.1)
+
         controller.set_policy(Leap.Controller.POLICY_BACKGROUND_FRAMES)
         controller.config.save()
 
@@ -36,36 +43,45 @@ class SampleListener(Leap.Listener):
         # print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d" % (
               #frame.id, frame.timestamp, len(frame.hands), len(frame.fingers))
 
-        for gesture in frame.gestures():
+        gestures = frame.gestures()
+        for gesture in gestures:
             if gesture.type is Leap.Gesture.TYPE_SWIPE:
                 swipe = Leap.SwipeGesture(gesture)
-        try:
-            direction = swipe.direction
-            pointable = swipe.pointable
-            speed = swipe.speed
-            print direction, speed
-            if direction.x > 0 and abs(direction.y) < 0.5:
-                self.flag["direction"] = 0
-                self.flag["count"] += 1
-            elif direction.x < 0 and abs(direction.y) <0.5:
+                swipe_direction = swipe.direction
+                swipe_pointable = swipe.pointable
+                swipe_speed = swipe.speed
+                print swipe_direction, swipe_speed
+                if swipe_direction.x > 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
+                    self.flag["direction"] = 0
+                    self.flag["count"] += 1
+                elif swipe_direction.x < 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
+                    self.flag["direction"] = 1
+                    self.flag["count"] += 1
+                elif swipe_direction.y > 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
+                    self.flag["direction"] = 2 # up
+                    self.flag["volume"] += 1
+                    if self.flag["volume"] > self.swipe_volume_min_frames:
+                        sendkeys.arrow_input("volume_up")
+                        self.flag["volume"] = 0
+                elif swipe_direction.y < 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
+                    self.flag["direction"] = 3 # down
+                    self.flag["volume"] += 1
+                    if self.flag["volume"] > self.swipe_volume_min_frames:
+                        sendkeys.arrow_input("volume_Down")
+                        self.flag["volume"] = 0
+            if gesture.type is Leap.Gesture.TYPE_KEY_TAP:
+                key_tap = Leap.KeyTapGesture(gesture)
+                print key_tap
                 self.flag["direction"] = 1
                 self.flag["count"] += 1
-            '''elif direction.y > 0 and abs(direction.x) < 0.5:
-                self.flag["direction"] = 2 # up
-                self.flag["count"] += 1
-            elif direction.y < 0 and abs(direction.x) <0.5:
-                self.flag["direction"] = 3 # down
-                self.flag["count"] += 1'''
-        except:
-            if self.flag["direction"] == 1 and self.flag["count"] >= self.swipe_min_frames:
+
+        if len(gestures) == 0:
+            if self.flag["direction"] == 1:
                 sendkeys.arrow_input("right_arrow")
-            elif self.flag["direction"] == 0 and self.flag["count"] >= self.swipe_min_frames:
+            elif self.flag["direction"] == 0:
                 sendkeys.arrow_input("left_arrow")
-            '''elif self.flag["direction"] == 2 and self.flag["count"] >= self.swipe_volume_min_frames:
-                sendkeys.arrow_input("volume_up")
-            elif self.flag["direction"] == 3 and self.flag["count"] >= self.swipe_volume_min_frames:
-                sendkeys.arrow_input("volume_Down")'''
             self.flag["count"] = 0
+            self.flag["direction"] = -1
 
 
             # Get hands
