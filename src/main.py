@@ -1,7 +1,9 @@
 import sys
+
 sys.path.insert(0, "../lib")
 import Leap
 import sendkeys
+import win32api
 
 class SampleListener(Leap.Listener):
     finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
@@ -14,6 +16,13 @@ class SampleListener(Leap.Listener):
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
 
+    clockwiseness = "counterclockwise"
+    mousebegin = True
+    width = 0
+    height = 0
+    xpos = 0
+    ypos = 0
+
     def on_init(self, controller):
         controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
         controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
@@ -24,8 +33,18 @@ class SampleListener(Leap.Listener):
         controller.config.set("Gesture.KeyTap.HistorySeconds", 1.0)
         controller.config.set("Gesture.KeyTap.MinDistance", 0.1)
 
+        controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
+        controller.config.set("Gesture.Circle.MinRadius", 50.0)
+        controller.config.set("Gesture.Circle.MinArc", 2)
+
         controller.set_policy(Leap.Controller.POLICY_BACKGROUND_FRAMES)
         controller.config.save()
+
+        self.width = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][2]
+        self.height = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][3]
+        self.xpos = (int)(self.width / 2)
+        self.ypos = (int)(self.height / 2)
+
 
         print "Initialized"
 
@@ -48,38 +67,93 @@ class SampleListener(Leap.Listener):
 
         gestures = frame.gestures()
         for gesture in gestures:
-            if gesture.type is Leap.Gesture.TYPE_SWIPE:
-                swipe = Leap.SwipeGesture(gesture)
-                swipe_direction = swipe.direction
-                swipe_pointable = swipe.pointable
-                swipe_speed = swipe.speed
-                print swipe_direction, swipe_speed
-                if swipe_direction.x > 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
-                    self.flag["direction"] = 0
-                    self.flag["count"] += 1
-                    if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
-                elif swipe_direction.x < 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
-                    self.flag["direction"] = 1
-                    self.flag["count"] += 1
-                    if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
-                elif swipe_direction.y > 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
-                    self.flag["direction"] = 2 # up
-                    self.volume_flag["volume"] += 1
-                    if self.volume_flag["volume_starttime"] == 0: self.volume_flag["volume_starttime"] = frame.timestamp
-                    print self.volume_flag["last_diretion"]
-                    if self.volume_flag["volume"] > self.swipe_volume_min_frames and (self.volume_flag["volume_starttime"] - self.volume_flag["volume_lastendtime"] > self.min_during_time or self.volume_flag["last_diretion"] == 1):
-                        sendkeys.arrow_input("volume_up")
-                        self.volume_flag["volume"] = 0
-                        self.volume_flag["last_diretion"] = 1
-                elif swipe_direction.y < 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
-                    self.flag["direction"] = 3 # down
-                    self.volume_flag["volume"] += 1
-                    if self.volume_flag["volume_starttime"] == 0: self.volume_flag["volume_starttime"] = frame.timestamp
-                    print self.volume_flag["last_diretion"]
-                    if self.volume_flag["volume"] > self.swipe_volume_min_frames and (self.volume_flag["volume_starttime"] - self.volume_flag["volume_lastendtime"] > self.min_during_time or self.volume_flag["last_diretion"] == 0):
-                        sendkeys.arrow_input("volume_Down")
-                        self.volume_flag["volume"] = 0
-                        self.volume_flag["last_diretion"] = 0
+            righthand = frame.hands.rightmost
+            radius = righthand.sphere_radius
+            circle = Leap.CircleGesture(gesture)
+
+            pinky_position = righthand.fingers[4].bone(Leap.Bone.TYPE_DISTAL).center
+            ring_position = righthand.fingers[3].bone(Leap.Bone.TYPE_DISTAL).center
+            hand_position = righthand.palm_position
+
+            is_clock_valid = point_distance(ring_position, hand_position) > 50 and point_distance(pinky_position, hand_position) > 50
+
+            #print circle.pointable.direction.angle_to(circle.normal),
+            print point_distance(ring_position, hand_position),
+            print point_distance(pinky_position, hand_position),
+            print circle.pointable.direction.angle_to(circle.normal)
+
+            print is_clock_valid
+
+            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI / 2) and is_clock_valid:
+                self.clockwiseness = "clockwise"
+            elif (circle.pointable.direction.angle_to(circle.normal) > Leap.PI / 2) and is_clock_valid:
+                self.clockwiseness = "counterclockwise"
+                self.mousebegin = True
+                self.xpos = int(self.width/2)
+                self.ypos = int(self.height/2)
+
+            if self.clockwiseness == "counterclockwise":
+                if gesture.type is Leap.Gesture.TYPE_SWIPE:
+                    swipe = Leap.SwipeGesture(gesture)
+                    swipe_direction = swipe.direction
+                    swipe_pointable = swipe.pointable
+                    swipe_speed = swipe.speed
+                    if swipe_direction.x > 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
+                        self.flag["direction"] = 0
+                        self.flag["count"] += 1
+                        if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
+                    elif swipe_direction.x < 0 and abs(swipe_direction.y) < self.swipe_min_delta_y:
+                        self.flag["direction"] = 1
+                        self.flag["count"] += 1
+                        if self.flag["swipe_starttime"] == 0: self.flag["swipe_starttime"] = frame.timestamp
+                    elif swipe_direction.y > 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
+                        self.flag["direction"] = 2 # up
+                        self.volume_flag["volume"] += 1
+                        if self.volume_flag["volume_starttime"] == 0: self.volume_flag["volume_starttime"] = frame.timestamp
+                        if self.volume_flag["volume"] > self.swipe_volume_min_frames and (self.volume_flag["volume_starttime"] - self.volume_flag["volume_lastendtime"] > self.min_during_time or self.volume_flag["last_diretion"] == 1):
+                            sendkeys.arrow_input("volume_up")
+                            self.volume_flag["volume"] = 0
+                            self.volume_flag["last_diretion"] = 1
+                    elif swipe_direction.y < 0 and abs(swipe_direction.x) < self.swipe_min_delta_y:
+                        self.flag["direction"] = 3 # down
+                        self.volume_flag["volume"] += 1
+                        if self.volume_flag["volume_starttime"] == 0: self.volume_flag["volume_starttime"] = frame.timestamp
+                        if self.volume_flag["volume"] > self.swipe_volume_min_frames and (self.volume_flag["volume_starttime"] - self.volume_flag["volume_lastendtime"] > self.min_during_time or self.volume_flag["last_diretion"] == 0):
+                            sendkeys.arrow_input("volume_Down")
+                            self.volume_flag["volume"] = 0
+                            self.volume_flag["last_diretion"] = 0
+
+            elif self.clockwiseness == "clockwise":
+                if self.mousebegin == True:
+                    self.mousebegin = False
+                    sendkeys.mouse_move(self.xpos, self.ypos)
+                else:
+                    hand = frame.hands.rightmost
+                    hand_speed = hand.palm_velocity
+                    self.xpos = self.xpos + int(hand_speed.x / 50)
+                    self.ypos = self.ypos - int(hand_speed.y / 50)
+                    if self.xpos < 0:
+                        self.xpos = 0
+                    if self.xpos > self.width:
+                        self.xpos = self.width
+                    if self.ypos < 0:
+                        self.ypos = 0
+                    if self.ypos > self.height:
+                        self.ypos = self.height
+                    sendkeys.mouse_move(self.xpos, self.ypos)
+            '''
+            controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
+            controller.config.set("Gesture.Circle.MinRadius", 10.0)
+            controller.config.set("Gesture.Circle.MinArc", 2)
+            controller.config.save()
+            circle = Leap.CircleGesture(gesture)
+            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2):
+                clockwiseness = "clockwise"
+                print(clockwiseness)
+            else:
+                clockwiseness = "counterclockwise"
+                print(clockwiseness)
+            '''
 
         if len(gestures) == 0:
             if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 1):
@@ -147,6 +221,9 @@ class SampleListener(Leap.Listener):
         if not frame.hands.is_empty:
             print ""
         '''
+
+def point_distance(point1, point2):
+    return ((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2 + (point1[2] - point2[2])**2) ** 0.5
 
 def main():
     # Create a sample listener and controller
