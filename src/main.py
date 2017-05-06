@@ -1,12 +1,20 @@
 import sys
 sys.path.insert(0, "../lib")
 import Leap
+import sendkeys
 
 class SampleListener(Leap.Listener):
     finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
     bone_names = ['Metacarpal', 'Proximal', 'Intermediate', 'Distal']
+    flag = {"direction": 0, "count": 0}
+    swipe_min_frames = 5
 
     def on_init(self, controller):
+        controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
+        controller.config.set("Gesture.Swipe.MinLength", 100.0)
+        controller.config.set("Gesture.Swipe.MinVelocity", 100.0)
+        controller.config.save()
+
         print "Initialized"
 
     def on_connect(self, controller):
@@ -23,11 +31,33 @@ class SampleListener(Leap.Listener):
         # Get the most recent frame and report some basic information
         frame = controller.frame()
 
-        print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d" % (
-              frame.id, frame.timestamp, len(frame.hands), len(frame.fingers))
+        # print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d" % (
+              #frame.id, frame.timestamp, len(frame.hands), len(frame.fingers))
 
-        # Get hands
-        for hand in frame.hands:
+        for gesture in frame.gestures():
+            if gesture.type is Leap.Gesture.TYPE_SWIPE:
+                swipe = Leap.SwipeGesture(gesture)
+        try:
+            direction = swipe.direction
+            pointable = swipe.pointable
+            speed = swipe.speed
+            print direction, speed
+            if direction.x > 0:
+                self.flag["direction"] = 0
+                self.flag["count"] += 1
+            else:
+                self.flag["direction"] = 1
+                self.flag["count"] += 1
+        except:
+            if self.flag["direction"] == 1 and self.flag["count"] >= self.swipe_min_frames:
+                sendkeys.arrow_input("right_arrow")
+            elif self.flag["direction"] == 0 and self.flag["count"] >= self.swipe_min_frames:
+                sendkeys.arrow_input("left_arrow")
+            self.flag["count"] = 0
+
+
+            # Get hands
+        '''for hand in frame.hands:
 
             handType = "Left hand" if hand.is_left else "Right hand"
 
@@ -71,6 +101,7 @@ class SampleListener(Leap.Listener):
 
         if not frame.hands.is_empty:
             print ""
+        '''
 
 def main():
     # Create a sample listener and controller
