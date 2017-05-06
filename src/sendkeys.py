@@ -163,6 +163,10 @@ def mouse_click(x=None,y=None):
 		time.sleep(0.05)
 	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
 	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+def mouse_down():
+	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+def mouse_up():
+	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
 def mouse_dclick(x=None,y=None):
 	if not x is None and not y is None:
 		mouse_move(x,y)
@@ -173,11 +177,21 @@ def mouse_dclick(x=None,y=None):
 	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
 def mouse_move(x,y):
 	windll.user32.SetCursorPos(x, y)
+def mouse_move_down(x,y):
+	windll.user32.SetCursorPos(x, y)
+	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
 def key_input(str=''):
 	for c in str:
 		win32api.keybd_event(VK_CODE[c],0,0,0)
 		win32api.keybd_event(VK_CODE[c],0,win32con.KEYEVENTF_KEYUP,0)
 		time.sleep(0.01)
+def multi_input(str1='', str2=''):
+	win32api.keybd_event(VK_CODE[str1], 0, 0, 0)
+	win32api.keybd_event(VK_CODE[str2], 0, 0, 0)
+	time.sleep(0.01)
+	win32api.keybd_event(VK_CODE[str1], 0, win32con.KEYEVENTF_KEYUP, 0)
+	win32api.keybd_event(VK_CODE[str2], 0, win32con.KEYEVENTF_KEYUP, 0)
+	time.sleep(0.01)
 def arrow_input(str=''):
 	win32api.keybd_event(VK_CODE[str],0,0,0)
 	win32api.keybd_event(VK_CODE[str],0,win32con.KEYEVENTF_KEYUP,0)

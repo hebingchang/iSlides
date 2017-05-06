@@ -23,6 +23,8 @@ class SampleListener(Leap.Listener):
     xpos = 0
     ypos = 0
 
+    is_pen_valid = -1
+
     def on_init(self, controller):
         controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
         controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
@@ -42,8 +44,8 @@ class SampleListener(Leap.Listener):
 
         self.width = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][2]
         self.height = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][3]
-        self.xpos = (int)(self.width / 2)
-        self.ypos = (int)(self.height / 2)
+        self.xpos = int(self.width / 2)
+        self.ypos = int(self.height / 2)
 
 
         print "Initialized"
@@ -69,24 +71,34 @@ class SampleListener(Leap.Listener):
         righthand = frame.hands.rightmost
         pinky_position = righthand.fingers[4].bone(Leap.Bone.TYPE_DISTAL).center
         ring_position = righthand.fingers[3].bone(Leap.Bone.TYPE_DISTAL).center
+        finger_position = righthand.fingers[1].bone(Leap.Bone.TYPE_DISTAL).center
         hand_position = righthand.palm_position
-        is_clock_valid = point_distance(ring_position, hand_position) > 50 and point_distance(pinky_position,
-                                                                                              hand_position) > 50
+
+        is_clock_valid = point_distance(ring_position, hand_position) > 40 and point_distance(pinky_position,
+                                                                                              hand_position) > 40
+
+        pen_valid_temp = point_distance(finger_position, hand_position) > 80
+        if self.is_pen_valid != pen_valid_temp:
+            pen_switch = True
+        else:
+            pen_switch = False
+        self.is_pen_valid = pen_valid_temp
         if not is_clock_valid and not frame.hands.is_empty:
             self.clockwiseness = "operation"
         else:
             self.clockwiseness = "useless"
             self.mousebegin = True
-            self.xpos = int(self.width / 2)
-            self.ypos = int(self.height / 2)
+            (self.xpos, self.ypos) = win32api.GetCursorPos()
+            #self.xpos = self.width / 2
+            #self.ypos = self.height / 2
 
         for gesture in gestures:
             righthand = frame.hands.rightmost
             circle = Leap.CircleGesture(gesture)
             #print circle.pointable.direction.angle_to(circle.normal),
-            print point_distance(ring_position, hand_position),
-            print point_distance(pinky_position, hand_position),
-            print circle.pointable.direction.angle_to(circle.normal)
+            #print point_distance(ring_position, hand_position),
+            #print point_distance(pinky_position, hand_position),
+            #print circle.pointable.direction.angle_to(circle.normal)
 
             if self.clockwiseness == "useless":
                 if gesture.type is Leap.Gesture.TYPE_SWIPE:
@@ -120,10 +132,9 @@ class SampleListener(Leap.Listener):
                             self.volume_flag["last_diretion"] = 0
 
         if self.clockwiseness == "operation":
-            if self.mousebegin == True:
-                self.mousebegin = False
-                sendkeys.mouse_move(self.xpos, self.ypos)
-            else:
+            if pen_switch == True:
+                sendkeys.multi_input("left_control", "p")
+            if self.is_pen_valid == True:
                 hand = frame.hands.rightmost
                 hand_speed = hand.palm_velocity
                 self.xpos = self.xpos + int(hand_speed.x / 40)
@@ -136,20 +147,26 @@ class SampleListener(Leap.Listener):
                     self.ypos = 0
                 if self.ypos > self.height:
                     self.ypos = self.height
-                sendkeys.mouse_move(self.xpos, self.ypos)
-            '''
-            controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
-            controller.config.set("Gesture.Circle.MinRadius", 10.0)
-            controller.config.set("Gesture.Circle.MinArc", 2)
-            controller.config.save()
-            circle = Leap.CircleGesture(gesture)
-            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI/2):
-                clockwiseness = "clockwise"
-                print(clockwiseness)
+                sendkeys.mouse_move_down(self.xpos, self.ypos)
             else:
-                clockwiseness = "counterclockwise"
-                print(clockwiseness)
-            '''
+                sendkeys.mouse_up()
+                if self.mousebegin == True:
+                    self.mousebegin = False
+                    sendkeys.mouse_move(self.xpos, self.ypos)
+                else:
+                    hand = frame.hands.rightmost
+                    hand_speed = hand.palm_velocity
+                    self.xpos = self.xpos + int(hand_speed.x / 40)
+                    self.ypos = self.ypos - int(hand_speed.y / 40)
+                    if self.xpos < 0:
+                        self.xpos = 0
+                    if self.xpos > self.width:
+                        self.xpos = self.width
+                    if self.ypos < 0:
+                        self.ypos = 0
+                    if self.ypos > self.height:
+                        self.ypos = self.height
+                    sendkeys.mouse_move(self.xpos, self.ypos)
 
         if len(gestures) == 0:
             if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 1):
