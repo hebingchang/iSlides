@@ -66,33 +66,29 @@ class SampleListener(Leap.Listener):
               #frame.id, frame.timestamp, len(frame.hands), len(frame.fingers))
 
         gestures = frame.gestures()
+        righthand = frame.hands.rightmost
+        pinky_position = righthand.fingers[4].bone(Leap.Bone.TYPE_DISTAL).center
+        ring_position = righthand.fingers[3].bone(Leap.Bone.TYPE_DISTAL).center
+        hand_position = righthand.palm_position
+        is_clock_valid = point_distance(ring_position, hand_position) > 50 and point_distance(pinky_position,
+                                                                                              hand_position) > 50
+        if not is_clock_valid and not frame.hands.is_empty:
+            self.clockwiseness = "operation"
+        else:
+            self.clockwiseness = "useless"
+            self.mousebegin = True
+            self.xpos = int(self.width / 2)
+            self.ypos = int(self.height / 2)
+
         for gesture in gestures:
             righthand = frame.hands.rightmost
-            radius = righthand.sphere_radius
             circle = Leap.CircleGesture(gesture)
-
-            pinky_position = righthand.fingers[4].bone(Leap.Bone.TYPE_DISTAL).center
-            ring_position = righthand.fingers[3].bone(Leap.Bone.TYPE_DISTAL).center
-            hand_position = righthand.palm_position
-
-            is_clock_valid = point_distance(ring_position, hand_position) > 50 and point_distance(pinky_position, hand_position) > 50
-
             #print circle.pointable.direction.angle_to(circle.normal),
             print point_distance(ring_position, hand_position),
             print point_distance(pinky_position, hand_position),
             print circle.pointable.direction.angle_to(circle.normal)
 
-            print is_clock_valid
-
-            if (circle.pointable.direction.angle_to(circle.normal) <= Leap.PI / 2) and is_clock_valid:
-                self.clockwiseness = "clockwise"
-            elif (circle.pointable.direction.angle_to(circle.normal) > Leap.PI / 2) and is_clock_valid:
-                self.clockwiseness = "counterclockwise"
-                self.mousebegin = True
-                self.xpos = int(self.width/2)
-                self.ypos = int(self.height/2)
-
-            if self.clockwiseness == "counterclockwise":
+            if self.clockwiseness == "useless":
                 if gesture.type is Leap.Gesture.TYPE_SWIPE:
                     swipe = Leap.SwipeGesture(gesture)
                     swipe_direction = swipe.direction
@@ -123,24 +119,24 @@ class SampleListener(Leap.Listener):
                             self.volume_flag["volume"] = 0
                             self.volume_flag["last_diretion"] = 0
 
-            elif self.clockwiseness == "clockwise":
-                if self.mousebegin == True:
-                    self.mousebegin = False
-                    sendkeys.mouse_move(self.xpos, self.ypos)
-                else:
-                    hand = frame.hands.rightmost
-                    hand_speed = hand.palm_velocity
-                    self.xpos = self.xpos + int(hand_speed.x / 50)
-                    self.ypos = self.ypos - int(hand_speed.y / 50)
-                    if self.xpos < 0:
-                        self.xpos = 0
-                    if self.xpos > self.width:
-                        self.xpos = self.width
-                    if self.ypos < 0:
-                        self.ypos = 0
-                    if self.ypos > self.height:
-                        self.ypos = self.height
-                    sendkeys.mouse_move(self.xpos, self.ypos)
+        if self.clockwiseness == "operation":
+            if self.mousebegin == True:
+                self.mousebegin = False
+                sendkeys.mouse_move(self.xpos, self.ypos)
+            else:
+                hand = frame.hands.rightmost
+                hand_speed = hand.palm_velocity
+                self.xpos = self.xpos + int(hand_speed.x / 40)
+                self.ypos = self.ypos - int(hand_speed.y / 40)
+                if self.xpos < 0:
+                    self.xpos = 0
+                if self.xpos > self.width:
+                    self.xpos = self.width
+                if self.ypos < 0:
+                    self.ypos = 0
+                if self.ypos > self.height:
+                    self.ypos = self.height
+                sendkeys.mouse_move(self.xpos, self.ypos)
             '''
             controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
             controller.config.set("Gesture.Circle.MinRadius", 10.0)
