@@ -13,6 +13,7 @@ class SampleListener(Leap.Listener):
         controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
         controller.config.set("Gesture.Swipe.MinLength", 100.0)
         controller.config.set("Gesture.Swipe.MinVelocity", 100.0)
+        controller.set_policy(Leap.Controller.POLICY_BACKGROUND_FRAMES)
         controller.config.save()
 
         print "Initialized"
