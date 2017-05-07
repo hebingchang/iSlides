@@ -70,23 +70,30 @@ class SampleListener(Leap.Listener):
         finger_position = righthand.fingers[1].bone(Leap.Bone.TYPE_DISTAL).center
         hand_position = righthand.palm_position
 
-        is_clock_valid = point_distance(ring_position, hand_position) > 40 and point_distance(pinky_position,
-                                                                                              hand_position) > 40
+        is_fisting = (0.0 < point_distance(ring_position, hand_position) < 40.0 and 0.0 < point_distance(pinky_position,
+                                                                                              hand_position) < 40.0)
 
-        pen_valid_temp = point_distance(finger_position, hand_position) > 80
-        if self.is_pen_valid != pen_valid_temp:
-            pen_switch = True
-        else:
-            pen_switch = False
-        self.is_pen_valid = pen_valid_temp
-        if not is_clock_valid and not frame.hands.is_empty:
+        if is_fisting and not frame.hands.is_empty:
             self.is_mouse_controlled = True
         else:
+            if frame.hands.is_empty and self.is_pen_valid and self.is_mouse_controlled:
+                sendkeys.multi_input("left_control", "p")
+                sendkeys.mouse_up()
+                self.is_pen_valid = False
+                pen_switch = False
             self.is_mouse_controlled = False
             self.mousebegin = True
             (self.xpos, self.ypos) = win32api.GetCursorPos()
             #self.xpos = self.width / 2
             #self.ypos = self.height / 2
+
+        pen_valid_temp = point_distance(finger_position, hand_position) > 80 and self.is_mouse_controlled
+        if self.is_pen_valid != pen_valid_temp:
+            pen_switch = True
+        else:
+            pen_switch = False
+        self.is_pen_valid = pen_valid_temp
+
 
         for gesture in gestures:
             righthand = frame.hands.rightmost
@@ -96,7 +103,7 @@ class SampleListener(Leap.Listener):
             #print point_distance(pinky_position, hand_position),
             #print circle.pointable.direction.angle_to(circle.normal)
 
-            if self.is_mouse_controlled == "useless":
+            if not self.is_mouse_controlled:
                 if gesture.type is Leap.Gesture.TYPE_SWIPE:
                     swipe = Leap.SwipeGesture(gesture)
                     swipe_direction = swipe.direction
@@ -146,8 +153,8 @@ class SampleListener(Leap.Listener):
                 sendkeys.mouse_move_down(self.xpos, self.ypos)
 
             else:
-                sendkeys.mouse_up()
                 if pen_switch == True:
+                    sendkeys.mouse_up()
                     sendkeys.multi_input("left_control", "p")
                 if self.mousebegin == True:
                     self.mousebegin = False

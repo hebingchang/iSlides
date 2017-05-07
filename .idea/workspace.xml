@@ -18,8 +18,8 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="936">
-              <caret line="152" column="35" lean-forward="true" selection-start-line="152" selection-start-column="35" selection-end-line="152" selection-end-column="35" />
+            <state relative-caret-position="252">
+              <caret line="175" column="0" lean-forward="true" selection-start-line="175" selection-start-column="0" selection-end-line="175" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -38,8 +38,8 @@
       <file leaf-file-name="sendkeys.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/sendkeys.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="156">
-              <caret line="142" column="13" lean-forward="true" selection-start-line="142" selection-start-column="13" selection-end-line="142" selection-end-column="13" />
+            <state relative-caret-position="584">
+              <caret line="181" column="54" lean-forward="true" selection-start-line="181" selection-start-column="54" selection-end-line="181" selection-end-column="54" />
               <folding>
                 <element signature="e#23#38#0" expanded="true" />
               </folding>
@@ -62,11 +62,15 @@
       <find>self.volume_lastendtime_flag</find>
       <find>self.volume_last_diretion</find>
       <find>if gesture.type is Leap.Gesture</find>
+      <find>&quot;operation&quot;</find>
+      <find>is_clock_valid</find>
     </findStrings>
     <replaceStrings>
       <replace>\t</replace>
       <replace>self.volume_flag[&quot;volume_lastendtime_flag&quot;]</replace>
       <replace>self.volume_flag[&quot;last_diretion&quot;]</replace>
+      <replace>True</replace>
+      <replace>is_fisting</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -79,8 +83,8 @@
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/src/operation.py" />
         <option value="$PROJECT_DIR$/src/voice_control.py" />
-        <option value="$PROJECT_DIR$/src/main.py" />
         <option value="$PROJECT_DIR$/src/sendkeys.py" />
+        <option value="$PROJECT_DIR$/src/main.py" />
       </list>
     </option>
   </component>
@@ -338,7 +342,21 @@
       <option name="project" value="LOCAL" />
       <updated>1494081387523</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="fix some bugs">
+      <created>1494121318611</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1494121318611</updated>
+    </task>
+    <task id="LOCAL-00008" summary="fix some bugs caused by some terrible programmer">
+      <created>1494122063650</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1494122063650</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -371,7 +389,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="upload code" />
     <MESSAGE value="update code" />
-    <option name="LAST_COMMIT_MESSAGE" value="update code" />
+    <MESSAGE value="fix some bugs" />
+    <MESSAGE value="fix some bugs caused by some terrible programmer" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix some bugs caused by some terrible programmer" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -444,8 +464,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/sendkeys.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="156">
-          <caret line="142" column="13" lean-forward="true" selection-start-line="142" selection-start-column="13" selection-end-line="142" selection-end-column="13" />
+        <state relative-caret-position="584">
+          <caret line="181" column="54" lean-forward="true" selection-start-line="181" selection-start-column="54" selection-end-line="181" selection-end-column="54" />
           <folding>
             <element signature="e#23#38#0" expanded="true" />
           </folding>
@@ -454,8 +474,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="936">
-          <caret line="152" column="35" lean-forward="true" selection-start-line="152" selection-start-column="35" selection-end-line="152" selection-end-column="35" />
+        <state relative-caret-position="252">
+          <caret line="175" column="0" lean-forward="true" selection-start-line="175" selection-start-column="0" selection-end-line="175" selection-end-column="0" />
           <folding />
         </state>
       </provider>
