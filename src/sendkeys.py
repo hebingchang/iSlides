@@ -178,8 +178,8 @@ def mouse_dclick(x=None,y=None):
 def mouse_move(x,y):
 	windll.user32.SetCursorPos(x, y)
 def mouse_move_down(x,y):
-	windll.user32.SetCursorPos(x, y)
 	win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+	windll.user32.SetCursorPos(x, y)
 def key_input(str=''):
 	for c in str:
 		win32api.keybd_event(VK_CODE[c],0,0,0)
@@ -188,7 +188,6 @@ def key_input(str=''):
 def multi_input(str1='', str2=''):
 	win32api.keybd_event(VK_CODE[str1], 0, 0, 0)
 	win32api.keybd_event(VK_CODE[str2], 0, 0, 0)
-	time.sleep(0.01)
 	win32api.keybd_event(VK_CODE[str1], 0, win32con.KEYEVENTF_KEYUP, 0)
 	win32api.keybd_event(VK_CODE[str2], 0, win32con.KEYEVENTF_KEYUP, 0)
 	time.sleep(0.01)

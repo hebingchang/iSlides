@@ -15,6 +15,8 @@ class SampleListener(Leap.Listener):
     swipe_min_frames = 2
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
+    mouse_speed_x_multiply = 85.4
+    mouse_speed_y_multiply = 40.4
 
     is_mouse_controlled = False
     mousebegin = True
@@ -70,8 +72,8 @@ class SampleListener(Leap.Listener):
         finger_position = righthand.fingers[1].bone(Leap.Bone.TYPE_DISTAL).center
         hand_position = righthand.palm_position
 
-        is_fisting = (0.0 < point_distance(ring_position, hand_position) < 40.0 and 0.0 < point_distance(pinky_position,
-                                                                                              hand_position) < 40.0)
+        is_fisting = (0.0 < point_distance(ring_position, hand_position) < 45.0 and 0.0 < point_distance(pinky_position,
+                                                                                              hand_position) < 45.0)
 
         if is_fisting and not frame.hands.is_empty:
             self.is_mouse_controlled = True
@@ -88,16 +90,53 @@ class SampleListener(Leap.Listener):
             #self.ypos = self.height / 2
 
         pen_valid_temp = point_distance(finger_position, hand_position) > 80 and self.is_mouse_controlled
-        if self.is_pen_valid != pen_valid_temp:
-            pen_switch = True
-        else:
-            pen_switch = False
+        if self.is_pen_valid and not pen_valid_temp:
+            sendkeys.mouse_up()
+            sendkeys.multi_input("left_control", "p")
+        elif not self.is_pen_valid and pen_valid_temp:
+            sendkeys.multi_input("left_control", "p")
+            sendkeys.mouse_down()
         self.is_pen_valid = pen_valid_temp
 
 
+        if self.is_mouse_controlled:
+            if self.is_pen_valid:
+                hand = frame.hands.rightmost
+                hand_speed = hand.palm_velocity
+                self.xpos = self.xpos + int(hand_speed.x / 40)
+                self.ypos = self.ypos - int(hand_speed.y / 40)
+                if self.xpos < 0:
+                    self.xpos = 0
+                if self.xpos > self.width:
+                    self.xpos = self.width
+                if self.ypos < 0:
+                    self.ypos = 0
+                if self.ypos > self.height:
+                    self.ypos = self.height
+                sendkeys.mouse_move_down(self.xpos, self.ypos)
+
+            else:
+                if self.mousebegin:
+                    self.mousebegin = False
+                    sendkeys.mouse_move(self.xpos, self.ypos)
+                else:
+                    hand = frame.hands.rightmost
+                    hand_speed = hand.palm_velocity
+                    self.xpos = self.xpos + int(hand_speed.x / self.width * self.mouse_speed_x_multiply)
+                    self.ypos = self.ypos - int(hand_speed.y / self.height * self.mouse_speed_y_multiply)
+                    if self.xpos < 0:
+                        self.xpos = 0
+                    if self.xpos > self.width:
+                        self.xpos = self.width
+                    if self.ypos < 0:
+                        self.ypos = 0
+                    if self.ypos > self.height:
+                        self.ypos = self.height
+                    sendkeys.mouse_move(self.xpos, self.ypos)
+
         for gesture in gestures:
-            righthand = frame.hands.rightmost
-            circle = Leap.CircleGesture(gesture)
+            #righthand = frame.hands.rightmost
+            #circle = Leap.CircleGesture(gesture)
             #print circle.pointable.direction.angle_to(circle.normal),
             #print point_distance(ring_position, hand_position),
             #print point_distance(pinky_position, hand_position),
@@ -134,45 +173,7 @@ class SampleListener(Leap.Listener):
                             self.volume_flag["volume"] = 0
                             self.volume_flag["last_diretion"] = 0
 
-        if self.is_mouse_controlled == True:
-            if self.is_pen_valid == True:
-                if pen_switch == True:
-                    sendkeys.multi_input("left_control", "p")
-                hand = frame.hands.rightmost
-                hand_speed = hand.palm_velocity
-                self.xpos = self.xpos + int(hand_speed.x / 40)
-                self.ypos = self.ypos - int(hand_speed.y / 40)
-                if self.xpos < 0:
-                    self.xpos = 0
-                if self.xpos > self.width:
-                    self.xpos = self.width
-                if self.ypos < 0:
-                    self.ypos = 0
-                if self.ypos > self.height:
-                    self.ypos = self.height
-                sendkeys.mouse_move_down(self.xpos, self.ypos)
 
-            else:
-                if pen_switch == True:
-                    sendkeys.mouse_up()
-                    sendkeys.multi_input("left_control", "p")
-                if self.mousebegin == True:
-                    self.mousebegin = False
-                    sendkeys.mouse_move(self.xpos, self.ypos)
-                else:
-                    hand = frame.hands.rightmost
-                    hand_speed = hand.palm_velocity
-                    self.xpos = self.xpos + int(hand_speed.x / 40)
-                    self.ypos = self.ypos - int(hand_speed.y / 40)
-                    if self.xpos < 0:
-                        self.xpos = 0
-                    if self.xpos > self.width:
-                        self.xpos = self.width
-                    if self.ypos < 0:
-                        self.ypos = 0
-                    if self.ypos > self.height:
-                        self.ypos = self.height
-                    sendkeys.mouse_move(self.xpos, self.ypos)
 
         if len(gestures) == 0:
             if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or (self.flag["last_direction"] == 1 and self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_same_direction_time)):
