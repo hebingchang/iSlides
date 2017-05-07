@@ -16,7 +16,7 @@ class SampleListener(Leap.Listener):
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
 
-    clockwiseness = "counterclockwise"
+    is_mouse_controlled = False
     mousebegin = True
     width = 0
     height = 0
@@ -27,17 +27,13 @@ class SampleListener(Leap.Listener):
 
     def on_init(self, controller):
         controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
-        controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
+        #controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
         controller.config.set("Gesture.Swipe.MinLength", 100.0)
         controller.config.set("Gesture.Swipe.MinVelocity", 160.0)
 
-        controller.config.set("Gesture.KeyTap.MinDownVelocity", 1.0)
-        controller.config.set("Gesture.KeyTap.HistorySeconds", 1.0)
-        controller.config.set("Gesture.KeyTap.MinDistance", 0.1)
-
-        controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
-        controller.config.set("Gesture.Circle.MinRadius", 50.0)
-        controller.config.set("Gesture.Circle.MinArc", 2)
+        #controller.config.set("Gesture.KeyTap.MinDownVelocity", 1.0)
+        #controller.config.set("Gesture.KeyTap.HistorySeconds", 1.0)
+        #controller.config.set("Gesture.KeyTap.MinDistance", 0.1)
 
         controller.set_policy(Leap.Controller.POLICY_BACKGROUND_FRAMES)
         controller.config.save()
@@ -84,9 +80,9 @@ class SampleListener(Leap.Listener):
             pen_switch = False
         self.is_pen_valid = pen_valid_temp
         if not is_clock_valid and not frame.hands.is_empty:
-            self.clockwiseness = "operation"
+            self.is_mouse_controlled = True
         else:
-            self.clockwiseness = "useless"
+            self.is_mouse_controlled = False
             self.mousebegin = True
             (self.xpos, self.ypos) = win32api.GetCursorPos()
             #self.xpos = self.width / 2
@@ -100,7 +96,7 @@ class SampleListener(Leap.Listener):
             #print point_distance(pinky_position, hand_position),
             #print circle.pointable.direction.angle_to(circle.normal)
 
-            if self.clockwiseness == "useless":
+            if self.is_mouse_controlled == "useless":
                 if gesture.type is Leap.Gesture.TYPE_SWIPE:
                     swipe = Leap.SwipeGesture(gesture)
                     swipe_direction = swipe.direction
@@ -131,7 +127,7 @@ class SampleListener(Leap.Listener):
                             self.volume_flag["volume"] = 0
                             self.volume_flag["last_diretion"] = 0
 
-        if self.clockwiseness == "operation":
+        if self.is_mouse_controlled == True:
             if self.is_pen_valid == True:
                 if pen_switch == True:
                     sendkeys.multi_input("left_control", "p")
