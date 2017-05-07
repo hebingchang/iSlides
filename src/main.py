@@ -11,7 +11,7 @@ class SampleListener(Leap.Listener):
     flag = {"direction": -1, "count": 0, "swipe_starttime": 0, "swipe_lastendtime": 0, "last_direction": -1}
     volume_flag = {"volume": 0, "volume_lastendtime": 0, "volume_starttime": 0, "last_diretion": -1}
     min_during_time = 1330000
-
+    min_same_direction_time = 200000
     swipe_min_frames = 2
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
@@ -132,9 +132,9 @@ class SampleListener(Leap.Listener):
                             self.volume_flag["last_diretion"] = 0
 
         if self.clockwiseness == "operation":
-            if pen_switch == True:
-                sendkeys.multi_input("left_control", "p")
             if self.is_pen_valid == True:
+                if pen_switch == True:
+                    sendkeys.multi_input("left_control", "p")
                 hand = frame.hands.rightmost
                 hand_speed = hand.palm_velocity
                 self.xpos = self.xpos + int(hand_speed.x / 40)
@@ -148,8 +148,11 @@ class SampleListener(Leap.Listener):
                 if self.ypos > self.height:
                     self.ypos = self.height
                 sendkeys.mouse_move_down(self.xpos, self.ypos)
+
             else:
                 sendkeys.mouse_up()
+                if pen_switch == True:
+                    sendkeys.multi_input("left_control", "p")
                 if self.mousebegin == True:
                     self.mousebegin = False
                     sendkeys.mouse_move(self.xpos, self.ypos)
@@ -169,11 +172,11 @@ class SampleListener(Leap.Listener):
                     sendkeys.mouse_move(self.xpos, self.ypos)
 
         if len(gestures) == 0:
-            if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 1):
+            if self.flag["direction"] == 1 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or (self.flag["last_direction"] == 1 and self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_same_direction_time)):
                 sendkeys.arrow_input("right_arrow")
                 self.flag["swipe_lastendtime"] = frame.timestamp
                 self.flag["last_direction"] = 1
-            elif self.flag["direction"] == 0 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or self.flag["last_direction"] == 0):
+            elif self.flag["direction"] == 0 and (self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_during_time or (self.flag["last_direction"] == 0 and self.flag["swipe_starttime"] - self.flag["swipe_lastendtime"] > self.min_same_direction_time)):
                 sendkeys.arrow_input("left_arrow")
                 self.flag["swipe_lastendtime"] = frame.timestamp
                 self.flag["last_direction"] = 0
