@@ -15,6 +15,9 @@ class SampleListener(Leap.Listener):
     swipe_min_frames = 2
     swipe_volume_min_frames = 4
     swipe_min_delta_y = 0.3
+
+    mouse_draw_speed_x_multiply = 14.872727
+    mouse_draw_speed_y_multiply = 20.266666
     mouse_speed_x_multiply = 85.4
     mouse_speed_y_multiply = 40.4
 
@@ -42,6 +45,7 @@ class SampleListener(Leap.Listener):
 
         self.width = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][2]
         self.height = win32api.GetMonitorInfo(win32api.EnumDisplayMonitors(None, None)[0][0])["Monitor"][3]
+        print self.width, self.height
         self.xpos = int(self.width / 2)
         self.ypos = int(self.height / 2)
 
@@ -103,8 +107,8 @@ class SampleListener(Leap.Listener):
             if self.is_pen_valid:
                 hand = frame.hands.rightmost
                 hand_speed = hand.palm_velocity
-                self.xpos = self.xpos + int(hand_speed.x / 40)
-                self.ypos = self.ypos - int(hand_speed.y / 40)
+                self.xpos = self.xpos + int(hand_speed.x / self.width * self.mouse_speed_x_multiply)
+                self.ypos = self.ypos - int(hand_speed.y / self.height * self.mouse_speed_y_multiply)
                 if self.xpos < 0:
                     self.xpos = 0
                 if self.xpos > self.width:
